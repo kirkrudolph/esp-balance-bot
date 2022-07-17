@@ -70,11 +70,30 @@ void app_main(void)
 {
     mpu6050_handle_t imu = init();
 
-    //printf("%d\n",MPU6050_I2C_ADDRESS);
+    // Wake up is necessary to get data.
+    esp_err_t wake_up_return = mpu6050_wake_up(imu);
+    if (wake_up_return != ESP_OK) ESP_LOGE(TAG,"wake up failed!\n");
+
+    // Test "get_deviceid"
     uint8_t deviceid;
     esp_err_t test = mpu6050_get_deviceid(imu, &deviceid);
+    if (test != ESP_OK) ESP_LOGE(TAG,"get device id failed!\n");
 
+    // Test "get_raw_acce"
+    mpu6050_raw_acce_value_t raw_acce_value;
+    esp_err_t test2 = mpu6050_get_raw_acce(imu, &raw_acce_value);
+    if (test2 != ESP_OK) ESP_LOGE(TAG,"get raw accel failed!\n");
+
+    // Test "get_acce"
+    mpu6050_acce_value_t acce_value;
+    esp_err_t test3 = mpu6050_get_acce(imu, &acce_value);
+    if (test3 != ESP_OK) ESP_LOGE(TAG,"get accel failed!\n");
+
+    // Print out tests
     printf("%d\n",deviceid);
+    printf("x: %d, y: %d,z: %d \n",raw_acce_value.raw_acce_x,raw_acce_value.raw_acce_y,raw_acce_value.raw_acce_z);
+    printf("x: %f, y: %f,z: %f \n",acce_value.acce_x,acce_value.acce_y,acce_value.acce_z);
 
+    // Clean up resources
     terminate(imu);
 }
