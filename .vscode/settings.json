@@ -1,0 +1,14 @@
+{
+  "terminal.integrated.env.osx": {
+    "PATH": ""
+  },
+  "files.associations": {
+    "*.md": "markdown",
+    "*.mdx": "tdx",
+    "*.c": "c",
+    "*.h": "c"
+  },
+  "python.pythonPath": "/Users/kirkrudolph/.espressif/python_env/idf4.2_py3.7_env/bin/python",
+  "idf.port": "/dev/cu.SLAB_USBtoUART",
+  "idf.flashType": "UART"
+}
