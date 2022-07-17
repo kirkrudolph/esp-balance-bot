@@ -5,19 +5,23 @@
 #include "driver/i2c.h"
 #include "mpu6050.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+
 #define TAG "MAIN"
-#define I2C_MASTER_PORT I2C_NUM_0       /*!< I2C port number for master dev */
-#define I2C_MASTER_SDA_IO 21            /*!< gpio number for I2C master data  */
-#define I2C_MASTER_SCL_IO 22            /*!< gpio number for I2C master clock */
-#define I2C_MASTER_FREQ_HZ 100000       /*!< I2C master clock frequency */
+#define I2C_MASTER_PORT     I2C_NUM_0       /*  I2C port number for master dev      */
+#define I2C_MASTER_SDA_IO   21              /*  gpio number for I2C master data     */
+#define I2C_MASTER_SCL_IO   22              /*  gpio number for I2C master clock    */
+#define I2C_MASTER_FREQ_HZ  100000          /*  I2C master clock frequency 100kHz   */
+#define SLV_RX_BUF_LEN      0
+#define SLV_TX_BUF_LEN      0
+
+static mpu6050_handle_t imu = NULL;
 
 void configure_i2c(void){
-    // See docs for guidelines on i2c config.
-
-    // Which of the two I2C controllers to use?
-    i2c_port_t i2c_master_port = I2C_MASTER_PORT;
-    
-    // 1. Configuration
+   
+    // Configuration
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = I2C_MASTER_SDA_IO,            // select GPIO specific to your project
@@ -29,38 +33,122 @@ void configure_i2c(void){
     };
 
     // Finish Configuration
-    esp_err_t finish_config = i2c_param_config(i2c_master_port, &conf);
+    esp_err_t finish_config = i2c_param_config(I2C_MASTER_PORT, &conf);
+    if (finish_config != ESP_OK) ESP_LOGE(TAG,"i2c configure failed!");
 
-    // Error handling
-    if (finish_config != ESP_OK) ESP_LOGE(TAG,"i2c configure failed!\n");
-
-    // 2. Install i2c driver
-    esp_err_t finish_install = i2c_driver_install(i2c_master_port, conf.mode, 0, 0, ESP_INTR_FLAG_LEVEL1);
-
-    // Error handling
-    if (finish_install != ESP_OK) ESP_LOGE(TAG,"i2c install failed!\n");
-
+    // Install i2c driver
+    esp_err_t finish_install = i2c_driver_install(I2C_MASTER_PORT, conf.mode, SLV_RX_BUF_LEN, SLV_TX_BUF_LEN, ESP_INTR_FLAG_LEVEL1);
+    if (finish_install != ESP_OK) ESP_LOGE(TAG,"i2c install failed!");
 }
 
-mpu6050_handle_t init(void){
+void init(void){
 
     configure_i2c();
 
-    mpu6050_handle_t imu = mpu6050_create(I2C_MASTER_PORT, MPU6050_I2C_ADDRESS);
+    // Create IMU instance
+    imu = mpu6050_create(I2C_MASTER_PORT, MPU6050_I2C_ADDRESS);
+    if (!imu) ESP_LOGE(TAG,"IMU init failed!");
 
-    if (!imu) ESP_LOGE(TAG,"IMU init failed!\n");
+    /*  DeviceID Options
+    //
+    // | AD0 | I2C Address |
+    // |-----|-------------|
+    // |  0  |     104     | 
+    // |  1  |     105     |
+    */
+    uint8_t deviceid;
+    esp_err_t device_id_ret = mpu6050_get_deviceid(imu, &deviceid);
+    if (device_id_ret != ESP_OK) ESP_LOGE(TAG,"get device id failed!");
+    ESP_LOGI(TAG,"IMU I2C DeviceID: %d",deviceid);
 
-    return imu;
+    /* Sensitivity Options
+    //
+    // |     Setting      |  Value  | Range (g)| Resolution (g/bit) |
+    // |------------------|---------|----------|--------------------|
+    // | ACCE_FS_2G       |    0    |   ±  2   |  1/16,384 = 1/2^14 |
+    // | ACCE_FS_4G       |    1    |   ±  4   |   1/8,192 = 1/2^13 |
+    // | ACCE_FS_8G       |    2    |   ±  8   |   1/4,096 = 1/2^12 |
+    // | ACCE_FS_16G      |    3    |   ± 16   |   1/2,048 = 1/2^11 |
+    //
+    // |     Setting      |  Value  | Range (deg/s)| Resolution (deg/s/bit) |
+    // |------------------|---------|--------------|------------------------|
+    // | GYRO_FS_250DPS   |    0    |    ±  250    |   1/131  = 0.00763     |
+    // | GYRO_FS_500DPS   |    1    |    ±  500    |   1/65.5 = 0.01527     |
+    // | GYRO_FS_1000DPS  |    2    |    ± 1000    |   1/32.8 = 0.03053     |
+    // | GYRO_FS_2000DPS  |    3    |    ± 2000    |   1/16.4 = 0.06107     |
+    */
+
+    // Check Sensitivities
+    float acce_sensitivity;
+    float gyro_sensitivity;
+    esp_err_t acce_sens_ret = mpu6050_get_acce_sensitivity(imu, &acce_sensitivity);
+    if (acce_sens_ret != ESP_OK) ESP_LOGE(TAG,"Couldn't get Accel Sensitivity!");
+    esp_err_t gyro_sens_ret = mpu6050_get_gyro_sensitivity(imu, &gyro_sensitivity);
+    if (gyro_sens_ret != ESP_OK) ESP_LOGE(TAG,"Couldn't get Gyro Sensitivity!");
+    ESP_LOGI(TAG,"Accel/Gyro Sensitivity: %f, %f", acce_sensitivity, gyro_sensitivity);
+
+    if (0)
+    {
+        esp_err_t config_error = mpu6050_config(imu, ACCE_FS_4G, GYRO_FS_500DPS);
+        if (config_error != ESP_OK) ESP_LOGE(TAG,"Couldn't set Accel/Gyro Sensitivity!");
+    }
+
 }
 
-void read_data(void){
+void read_data_task(void *params){
+    
+    init();
+
+    while (true){
+
+        // Wake up is necessary to get data.
+        esp_err_t wake_up_return = mpu6050_wake_up(imu);
+        if (wake_up_return != ESP_OK) ESP_LOGE(TAG,"wake up failed!");
+
+        // Test "get_raw"
+/* Raw data isn't very useful.
+        mpu6050_raw_acce_value_t raw_acce_value;
+        esp_err_t raw_acce_result = mpu6050_get_raw_acce(imu, &raw_acce_value);
+        if (raw_acce_result != ESP_OK) ESP_LOGE(TAG,"get raw accel failed!");
+        ESP_LOGI(TAG, "a_raw_x: %d, a_raw_y: %d, a_raw_z: %d",raw_acce_value.raw_acce_x,raw_acce_value.raw_acce_y,raw_acce_value.raw_acce_z);
+
+        mpu6050_raw_gyro_value_t raw_gyro_value;
+        esp_err_t raw_gyro_result = mpu6050_get_raw_gyro(imu, &raw_gyro_value);
+        if (raw_gyro_result != ESP_OK) ESP_LOGE(TAG,"get raw gyro failed!");
+        ESP_LOGI(TAG, "g_raw_x: %d, g_raw_y: %d, g_raw_z: %d",raw_gyro_value.raw_gyro_x,raw_gyro_value.raw_gyro_y,raw_gyro_value.raw_gyro_z);
+*/
+
+        // Test "get_value"
+        mpu6050_acce_value_t acce_value;
+        esp_err_t acce_result = mpu6050_get_acce(imu, &acce_value);
+        if (acce_result != ESP_OK) ESP_LOGE(TAG,"get accel failed!");
+        ESP_LOGI(TAG,"a_x: %f, a_y: %f, a_z: %f",acce_value.acce_x,acce_value.acce_y,acce_value.acce_z);
+
+        mpu6050_gyro_value_t gyro_value;
+        esp_err_t gyro_result = mpu6050_get_gyro(imu, &gyro_value);
+        if (gyro_result != ESP_OK) ESP_LOGE(TAG,"get gyro failed!");
+        ESP_LOGI(TAG,"g_x: %f, g_y: %f, g_z: %f",gyro_value.gyro_x,gyro_value.gyro_y,gyro_value.gyro_z);
+
+        // Test "filter"
+        complimentary_angle_t complimentary_angle;
+        esp_err_t filter_results = mpu6050_complimentory_filter(imu, &acce_value, &gyro_value, &complimentary_angle);
+        if (filter_results != ESP_OK) ESP_LOGE(TAG,"complimentory filter failed!");
+        ESP_LOGI(TAG,"roll: %f, pitch: %f\n",complimentary_angle.roll,complimentary_angle.pitch);
+
+        // Sleep after data has been read.
+        esp_err_t sleep_return = mpu6050_sleep(imu);
+        if (sleep_return != ESP_OK) ESP_LOGE(TAG,"sleep failed!");
+
+        // Delay 1s
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
 }
 
-void terminate(mpu6050_handle_t imu){
+void terminate(void){
 
     // Delete i2c
     esp_err_t check = i2c_driver_delete(I2C_MASTER_PORT);
-    if (check != ESP_OK) ESP_LOGE(TAG,"i2c driver delete failed!\n");
+    if (check != ESP_OK) ESP_LOGE(TAG,"i2c driver delete failed!");
 
     // Delete IMU
     mpu6050_delete(imu);
@@ -68,32 +156,7 @@ void terminate(mpu6050_handle_t imu){
 
 void app_main(void)
 {
-    mpu6050_handle_t imu = init();
-
-    // Wake up is necessary to get data.
-    esp_err_t wake_up_return = mpu6050_wake_up(imu);
-    if (wake_up_return != ESP_OK) ESP_LOGE(TAG,"wake up failed!\n");
-
-    // Test "get_deviceid"
-    uint8_t deviceid;
-    esp_err_t test = mpu6050_get_deviceid(imu, &deviceid);
-    if (test != ESP_OK) ESP_LOGE(TAG,"get device id failed!\n");
-
-    // Test "get_raw_acce"
-    mpu6050_raw_acce_value_t raw_acce_value;
-    esp_err_t test2 = mpu6050_get_raw_acce(imu, &raw_acce_value);
-    if (test2 != ESP_OK) ESP_LOGE(TAG,"get raw accel failed!\n");
-
-    // Test "get_acce"
-    mpu6050_acce_value_t acce_value;
-    esp_err_t test3 = mpu6050_get_acce(imu, &acce_value);
-    if (test3 != ESP_OK) ESP_LOGE(TAG,"get accel failed!\n");
-
-    // Print out tests
-    printf("%d\n",deviceid);
-    printf("x: %d, y: %d,z: %d \n",raw_acce_value.raw_acce_x,raw_acce_value.raw_acce_y,raw_acce_value.raw_acce_z);
-    printf("x: %f, y: %f,z: %f \n",acce_value.acce_x,acce_value.acce_y,acce_value.acce_z);
-
-    // Clean up resources
-    terminate(imu);
+    //init();
+    xTaskCreate(read_data_task, "Read_IMU", 1024 * 8, NULL, 2, NULL);
+    //terminate();
 }
