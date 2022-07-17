@@ -56,7 +56,7 @@ mpu6050_handle_t init(void){
 void read_data(void){
 }
 
-void terminate(mpu6050_handle_t *imu){
+void terminate(mpu6050_handle_t imu){
 
     // Delete i2c
     esp_err_t check = i2c_driver_delete(I2C_MASTER_PORT);
@@ -76,5 +76,5 @@ void app_main(void)
 
     printf("%d\n",deviceid);
 
-    //terminate(&imu);
+    terminate(imu);
 }
