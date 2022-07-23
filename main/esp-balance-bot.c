@@ -43,7 +43,7 @@ void configure_i2c(void){
     if (finish_install != ESP_OK) ESP_LOGE(TAG,"i2c install failed!");
 }
 
-void init(void){
+void imu_init(void){
 
     configure_i2c();
 
@@ -137,7 +137,7 @@ void pwm_task(void){
 
 void read_data_task(void *params){
     
-    init();
+    imu_init();
 
     while (true){
 
@@ -223,9 +223,8 @@ void toggle_gpio(gpio_config_t GPIO){
 
 void app_main(void)
 {
-    //init();
-    gpio_config_t GPIO = setup_gpio();
     xTaskCreate(read_data_task, "Read_IMU", 1024 * 8, NULL, 2, NULL);
+    setup_gpio();
 
     //pwm_task();
     
