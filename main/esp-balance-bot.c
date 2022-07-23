@@ -8,15 +8,18 @@
 
 #define TAG "MAIN"
 
+#define GPIO5 5
+
+
 gpio_config_t setup_gpio(void){
     gpio_config_t config;
-    config.pin_bit_mask = ((1ULL<<4)); //| (1ULL<<12));
+    config.pin_bit_mask = ((1ULL<<GPIO5)); //| (1ULL<<12));
     config.mode = GPIO_MODE_OUTPUT;
     config.pull_down_en = GPIO_PULLDOWN_DISABLE;//GPIO_PULLDOWN_ENABLE;
     config.pull_up_en = GPIO_PULLUP_ENABLE;//GPIO_PULLUP_DISABLE;
     gpio_config(&config);
 
-    gpio_set_level(4,1);
+    gpio_set_level(GPIO5,1);
 
 
     gpio_pad_select_gpio(2);
@@ -38,9 +41,9 @@ void toggle_gpio(gpio_config_t GPIO){
 void app_main(void)
 {
     xTaskCreate(read_imu_data_task, "Read_IMU", 1024 * 8, NULL, 2, NULL);
+    pwm_task();
     setup_gpio();
 
-    //pwm_task();
 
     //terminate_i2c();
 }
