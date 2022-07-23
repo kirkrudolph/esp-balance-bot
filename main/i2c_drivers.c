@@ -2,7 +2,6 @@
 #include "driver/i2c.h"
 #include "i2c_drivers.h"
 
-//#include "driver/gpio.h"
 
 #define TAG "I2C_DRIVERS"
 
@@ -125,6 +124,7 @@ void read_imu_data_task(void *params){
         
         vTaskDelay(pdMS_TO_TICKS(2000));        // Delay 1s
     }
+    vTaskDelete(NULL);
 }
 
 void terminate_i2c_driver(void){

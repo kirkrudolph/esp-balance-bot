@@ -42,7 +42,7 @@ void configure_and_install_ledc_channels(void){
         .hpoint = 0
     };
     
-    // Create LEDC
+    // Create LED Control
     ESP_ERROR_CHECK(ledc_channel_config(&channel_1));
     ESP_ERROR_CHECK(ledc_channel_config(&channel_2));
 }
@@ -74,4 +74,6 @@ void pwm_task(void){
         ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,1024,1000,LEDC_FADE_WAIT_DONE);
         //ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_1,1024,1000,LEDC_FADE_WAIT_DONE);
     }
+    vTaskDelete(NULL);
+
 }
