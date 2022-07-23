@@ -21,9 +21,9 @@ void app_main(void)
     BaseType_t xReturned_pwm  = xTaskCreate(      &pwm_fade_task,         "PWM", 1024 * 4, NULL, 2, NULL);
 
     // Error Handling
-    if( xReturned_gpio_init != pdPASS)  ESP_LOGE(TAG,"GPIO INIT: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
-    if( xReturned_pwm_init != pdPASS)   ESP_LOGE(TAG,"PWM INIT: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
-    if( xReturned_imu != pdPASS )       ESP_LOGE(TAG,"IMU: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
-    if( xReturned_gpio != pdPASS )      ESP_LOGE(TAG,"GPIO: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
-    if( xReturned_pwm != pdPASS )       ESP_LOGE(TAG,"PWM: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
+    if (xReturned_gpio_init != pdPASS)  ESP_LOGE(TAG,"GPIO INIT: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
+    if (xReturned_pwm_init  != pdPASS)  ESP_LOGE(TAG,"PWM INIT: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
+    if (xReturned_imu       != pdPASS)  ESP_LOGE(TAG,"IMU: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
+    if (xReturned_gpio      != pdPASS)  ESP_LOGE(TAG,"GPIO: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
+    if (xReturned_pwm       != pdPASS)  ESP_LOGE(TAG,"PWM: COULD_NOT_ALLOCATE_REQUIRED_MEMORY");
 }
