@@ -1,16 +1,10 @@
 #include "esp_log.h"
-#include "i2c_drivers.h"
 #include "driver/i2c.h"
-#include "driver/gpio.h"
+#include "i2c_drivers.h"
+
+//#include "driver/gpio.h"
 
 #define TAG "I2C_DRIVERS"
-
-#define I2C_MASTER_PORT     I2C_NUM_0       /*  I2C port number for master dev      */
-#define I2C_MASTER_SDA_IO   21              /*  gpio number for I2C master data     */
-#define I2C_MASTER_SCL_IO   22              /*  gpio number for I2C master clock    */
-#define I2C_MASTER_FREQ_HZ  100000          /*  I2C master clock frequency 100kHz   */
-#define I2C_SLV_RX_BUF_LEN  0               /*  I2C Slave Recieve Buffer            */
-#define I2C_SLV_TX_BUF_LEN  0               /*  I2C Slave Transfer Buffer           */
 
 static mpu6050_handle_t imu = NULL;
 
@@ -34,7 +28,7 @@ void configure_and_install_i2c_driver(void){
     ESP_ERROR_CHECK(i2c_driver_install(I2C_MASTER_PORT, conf.mode, I2C_SLV_RX_BUF_LEN, I2C_SLV_TX_BUF_LEN, ESP_INTR_FLAG_LEVEL1));
 }
 
-void get_mpu6050_device_id(mpu6050_handle_t sensor){
+void print_imu_device_id(mpu6050_handle_t imu){
 
     /*  MPU6050 DeviceID Options
     //
@@ -44,7 +38,7 @@ void get_mpu6050_device_id(mpu6050_handle_t sensor){
     // |  1  |     105     |
     */
     uint8_t deviceid;
-    ESP_ERROR_CHECK(mpu6050_get_deviceid(sensor, &deviceid));
+    ESP_ERROR_CHECK(mpu6050_get_deviceid(imu, &deviceid));
     ESP_LOGI(TAG,"IMU I2C DeviceID: %d",deviceid);
 }
 
@@ -53,7 +47,10 @@ mpu6050_handle_t imu_init(void){
     // Create IMU instance
     imu = mpu6050_create(I2C_MASTER_PORT, MPU6050_I2C_ADDRESS);
     if (!imu) ESP_LOGE(TAG,"IMU init failed!");
+    return imu;
+}
 
+void print_imu_sensitivity(mpu6050_handle_t imu){
     /* Sensitivity Options
     //
     // |     Setting      |  Value  | Range (g)| Resolution (g/bit) |
@@ -74,27 +71,66 @@ mpu6050_handle_t imu_init(void){
     // Check Sensitivities
     float acce_sensitivity;
     float gyro_sensitivity;
-    esp_err_t acce_sens_ret = mpu6050_get_acce_sensitivity(imu, &acce_sensitivity);
-    if (acce_sens_ret != ESP_OK) ESP_LOGE(TAG,"Couldn't get Accel Sensitivity!");
-    esp_err_t gyro_sens_ret = mpu6050_get_gyro_sensitivity(imu, &gyro_sensitivity);
-    if (gyro_sens_ret != ESP_OK) ESP_LOGE(TAG,"Couldn't get Gyro Sensitivity!");
+    ESP_ERROR_CHECK(mpu6050_get_acce_sensitivity(imu, &acce_sensitivity));
+    ESP_ERROR_CHECK(mpu6050_get_gyro_sensitivity(imu, &gyro_sensitivity));
     ESP_LOGI(TAG,"Accel/Gyro Sensitivity: %f, %f", acce_sensitivity, gyro_sensitivity);
+}
 
-    if (0)
-    {
-        esp_err_t config_error = mpu6050_config(imu, ACCE_FS_4G, GYRO_FS_500DPS);
-        if (config_error != ESP_OK) ESP_LOGE(TAG,"Couldn't set Accel/Gyro Sensitivity!");
+void print_imu_raw_data(mpu6050_handle_t imu){
+    mpu6050_raw_acce_value_t raw_acce_value;
+    ESP_ERROR_CHECK(mpu6050_get_raw_acce(imu, &raw_acce_value));
+    ESP_LOGI(TAG, "a_raw_x: %d, a_raw_y: %d, a_raw_z: %d",raw_acce_value.raw_acce_x,raw_acce_value.raw_acce_y,raw_acce_value.raw_acce_z);
+    
+    mpu6050_raw_gyro_value_t raw_gyro_value;
+    ESP_ERROR_CHECK(mpu6050_get_raw_gyro(imu, &raw_gyro_value));
+    ESP_LOGI(TAG, "g_raw_x: %d, g_raw_y: %d, g_raw_z: %d",raw_gyro_value.raw_gyro_x,raw_gyro_value.raw_gyro_y,raw_gyro_value.raw_gyro_z);
+}
+
+void print_imu_scaled_data(mpu6050_handle_t imu){
+    mpu6050_acce_value_t acce_value;
+    ESP_ERROR_CHECK(mpu6050_get_acce(imu, &acce_value));
+    ESP_LOGI(TAG,"a_x: %f, a_y: %f, a_z: %f",acce_value.acce_x,acce_value.acce_y,acce_value.acce_z);
+    
+    mpu6050_gyro_value_t gyro_value;
+    ESP_ERROR_CHECK(mpu6050_get_gyro(imu, &gyro_value));
+    ESP_LOGI(TAG,"g_x: %f, g_y: %f, g_z: %f",gyro_value.gyro_x,gyro_value.gyro_y,gyro_value.gyro_z);
+}
+
+void print_imu_filter_data(mpu6050_handle_t imu){
+    mpu6050_acce_value_t acce_value;
+    mpu6050_gyro_value_t gyro_value;
+    complimentary_angle_t complimentary_angle;
+    ESP_ERROR_CHECK(mpu6050_complimentory_filter(imu, &acce_value, &gyro_value, &complimentary_angle));
+    ESP_LOGI(TAG,"roll: %f, pitch: %f\n",complimentary_angle.roll,complimentary_angle.pitch);
+}
+
+void set_imu_sensitivity(mpu6050_handle_t imu){
+    ESP_ERROR_CHECK(mpu6050_config(imu, ACCE_FS_4G, GYRO_FS_500DPS));
+}
+
+void read_imu_data_task(void *params){
+    
+    configure_and_install_i2c_driver();         // Install i2c driver
+    mpu6050_handle_t imu = imu_init();          // Create IMU instance
+
+    while (true){
+
+        ESP_ERROR_CHECK(mpu6050_wake_up(imu));  // Wake up is necessary to get data.
+
+        print_imu_raw_data(imu);                // Print Raw Data
+        print_imu_scaled_data(imu);             // Print Scaled Data
+        print_imu_filter_data(imu);             // Print Filter Data
+        
+        ESP_ERROR_CHECK(mpu6050_sleep(imu));    // Sleep after reading data.
+        
+        vTaskDelay(pdMS_TO_TICKS(2000));        // Delay 1s
     }
-
-    return imu;
 }
 
 void terminate_i2c_driver(void){
-    // Delete i2c
     ESP_ERROR_CHECK(i2c_driver_delete(I2C_MASTER_PORT));
 }
 
 void terminate_imu_instance(void){
-    // Delete IMU
     mpu6050_delete(imu);
 }
