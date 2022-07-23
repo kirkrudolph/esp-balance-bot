@@ -24,7 +24,7 @@ void configure_and_install_ledc_channels(void){
 
     // Configure PWM_1
     ledc_channel_config_t channel_1 = {                 
-        .gpio_num = PWM_1_GPIO_PIN,
+        .gpio_num = PWM_1_PIN,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = LEDC_CHANNEL_0,
         .timer_sel = LEDC_TIMER_0,
@@ -34,7 +34,7 @@ void configure_and_install_ledc_channels(void){
 
     // Configure PWM_2
     ledc_channel_config_t channel_2 = {
-        .gpio_num = PWM_2_GPIO_PIN,
+        .gpio_num = PWM_2_PIN,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = LEDC_CHANNEL_1,
         .timer_sel = LEDC_TIMER_0,
@@ -50,15 +50,15 @@ void configure_and_install_ledc_channels(void){
 void init_pwm_task(void *params){
     configure_and_install_ledc_timer();                         // TIMER_0
     configure_and_install_ledc_channels();                      // PWM_1, PWM_2
-    ledc_fade_func_install(0);                                  // Install Fade Func
+    ESP_ERROR_CHECK(ledc_fade_func_install(0));                 // Install Fade Func
     vTaskDelete(NULL);
 }
 
 void sweep_led(void){
     // Sweep duty for LEDC
     for (int i = 0; i < 1024; i++){
-        ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,i,0);
-        ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_1,i,0);
+        ESP_ERROR_CHECK(ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,i,0));
+        ESP_ERROR_CHECK(ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_1,i,0));
 
         // ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, i);
         // ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
@@ -73,10 +73,10 @@ void pwm_fade_task(void *params){
     // Fade LED in and out
     while(true)
     {
-        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, OFF_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE);
-        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, OFF_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE);
-        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0,  ON_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE);
-        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1,  ON_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE);
+        ESP_ERROR_CHECK(ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, OFF_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE));
+        ESP_ERROR_CHECK(ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, OFF_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE));
+        ESP_ERROR_CHECK(ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0,  ON_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE));
+        ESP_ERROR_CHECK(ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1,  ON_DUTY, FADE_TIME_MS, LEDC_FADE_WAIT_DONE));
     }
     vTaskDelete(NULL);
 }

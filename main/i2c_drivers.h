@@ -5,8 +5,8 @@
 
 // I2C Configuration
 #define I2C_MASTER_PORT     I2C_NUM_0       /*  I2C port number for master dev      */
-#define I2C_MASTER_SDA_IO   21              /*  gpio number for I2C master data     */
-#define I2C_MASTER_SCL_IO   22              /*  gpio number for I2C master clock    */
+#define I2C_MASTER_SDA_PIN  21              /*  gpio number for I2C master data     */
+#define I2C_MASTER_SCL_PIN  22              /*  gpio number for I2C master clock    */
 #define I2C_MASTER_FREQ_HZ  100000          /*  I2C master clock frequency 100kHz   */
 #define I2C_SLV_RX_BUF_LEN  0               /*  I2C Slave Recieve Buffer            */
 #define I2C_SLV_TX_BUF_LEN  0               /*  I2C Slave Transfer Buffer           */

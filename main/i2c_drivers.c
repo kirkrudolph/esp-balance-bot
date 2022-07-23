@@ -12,9 +12,9 @@ void configure_and_install_i2c_driver(void){
     // I2C Configuration
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,                    // ESP32 is the master
-        .sda_io_num = I2C_MASTER_SDA_IO,            // select GPIO specific to your project
+        .sda_io_num = I2C_MASTER_SDA_PIN,           // select GPIO specific to your project
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = I2C_MASTER_SCL_IO,            // select GPIO specific to your project
+        .scl_io_num = I2C_MASTER_SCL_PIN,           // select GPIO specific to your project
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = I2C_MASTER_FREQ_HZ,     // select frequency specific to your project
         // .clk_flags = 0,                          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
