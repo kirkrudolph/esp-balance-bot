@@ -10,5 +10,6 @@
   },
   "python.pythonPath": "/Users/kirkrudolph/.espressif/python_env/idf4.2_py3.7_env/bin/python",
   "idf.port": "/dev/cu.SLAB_USBtoUART",
-  "idf.flashType": "UART"
+  "idf.flashType": "UART",
+  "idf.adapterTargetName": "esp32"
 }
