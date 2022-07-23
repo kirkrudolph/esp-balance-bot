@@ -14,12 +14,14 @@
 // -----------------------------------------
 // | USE                      | FUNC | PIN |
 // |--------------------------|------|-----|
-// | MOTOR_1_DIRECTION_PIN    | GPIO | 2   |
-// | MOTOR_2_DIRECTION_PIN    | GPIO | 19  |
+// | MOTOR_1_DIRECTION_1_PIN  | GPIO | 33  |
+// | MOTOR_1_DIRECTION_2_PIN  | GPIO | 25  |
+// | MOTOR_2_DIRECTION_1_PIN  | GPIO | 26  |
+// | MOTOR_2_DIRECTION_2_PIN  | GPIO | 27  |
 // | I2C_MASTER_SDA_PIN       | I2C  | 21  |
 // | I2C_MASTER_SCL_PIN       | I2C  | 22  |
-// | PWM_1_PIN                | PWM  | 4   |
-// | PWM_2_PIN                | PWM  | 18  |
+// | PWM_1_PIN                | PWM  | 32  |
+// | PWM_2_PIN                | PWM  | 14  |
 // -----------------------------------------
 
 void app_main(void)
