@@ -14,8 +14,8 @@
 // -----------------------------------------
 // | USE                      | FUNC | PIN |
 // |--------------------------|------|-----|
-// | MOTOR_1_DIRECTION_PIN    | GPIO | 5   |
-// | MOTOR_2_DIRECTION_PIN    | GPIO | 6   |
+// | MOTOR_1_DIRECTION_PIN    | GPIO | 2   |
+// | MOTOR_2_DIRECTION_PIN    | GPIO | 19  |
 // | I2C_MASTER_SDA_PIN       | I2C  | 21  |
 // | I2C_MASTER_SCL_PIN       | I2C  | 22  |
 // | PWM_1_PIN                | PWM  | 4   |
@@ -27,7 +27,6 @@ void app_main(void)
     // Init
     BaseType_t xReturned_gpio_init = xTaskCreate( &init_gpio_task, "Init_GPIO", 1024 * 4, NULL, 2, NULL);
     BaseType_t xReturned_pwm_init  = xTaskCreate(  &init_pwm_task,  "Init_PWM", 1024 * 4, NULL, 2, NULL);
-    vTaskDelay(pdMS_TO_TICKS(500));
     
     // App
     BaseType_t xReturned_gpio = xTaskCreate(   &toggle_gpio_task, "Toggle_GPIO", 1024 * 4, NULL, 2, NULL);
