@@ -47,11 +47,15 @@ void configure_and_install_ledc_channels(void){
     ESP_ERROR_CHECK(ledc_channel_config(&channel_2));
 }
 
-void pwm_task(void){
-    
+void init_pwm_task(void *params){
     configure_and_install_ledc_timer();                         // TIMER_0
     configure_and_install_ledc_channels();                      // PWM_1, PWM_2
+    ledc_fade_func_install(0);                                  // Install Fade Func
+    vTaskDelete(NULL);
+}
 
+void pwm_task(void *params){
+    
     // Sweep duty for LEDC
     for (int i = 0; i < 1024; i++){
         ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,i,0);
@@ -63,17 +67,18 @@ void pwm_task(void){
     }
 
     // Install fade function
-    ledc_fade_func_install(0);
+    
     //ledc_fade_func_install(1);
 
     // Fade LED in and out
     while(true)
     {
-        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,0,1000,LEDC_FADE_WAIT_DONE);
-        //ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_1,0,1000,LEDC_FADE_WAIT_DONE);
-        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,1024,1000,LEDC_FADE_WAIT_DONE);
-        //ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_1,1024,1000,LEDC_FADE_WAIT_DONE);
-    }
-    vTaskDelete(NULL);
 
+        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,0,1000,LEDC_FADE_WAIT_DONE);
+        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_1,0,1000,LEDC_FADE_WAIT_DONE);
+        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,1024,1000,LEDC_FADE_WAIT_DONE);
+        ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_1,1024,1000,LEDC_FADE_WAIT_DONE);
+    }
+    
+    vTaskDelete(NULL);
 }
