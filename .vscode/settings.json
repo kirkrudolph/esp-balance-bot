@@ -6,7 +6,8 @@
     "*.md": "markdown",
     "*.mdx": "tdx",
     "*.c": "c",
-    "*.h": "c"
+    "*.h": "c",
+    "*.inc": "c"
   },
   "python.pythonPath": "/Users/kirkrudolph/.espressif/python_env/idf4.2_py3.7_env/bin/python",
   "idf.port": "/dev/cu.SLAB_USBtoUART",
