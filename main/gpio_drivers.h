@@ -9,4 +9,4 @@
 void init_gpio_task(void *params);
 void toggle_gpio_task(void *params);
 
-#endif // DRIVERS_H
+#endif // GPIO_DRIVERS_H
