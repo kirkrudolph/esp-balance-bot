@@ -21,7 +21,20 @@ ADC VRef calibration: 1100mV
 - [Extra Mount](https://www.thingiverse.com/thing:26538)
 
 
-## IMU Options
+## IMU
+
+### [Mounting Placement](https://www.basicairdata.eu/knowledge-center/compensation/inertial-measurement-unit-placement/)
+
+### [Fusing 1](https://www.youtube.com/watch?v=T9jXoG0QYIA)
+- Still haven't seen any example using raw sensor data and known physics of object.
+- All examples go to angles (which isn't a raw measurement and will always drift).
+### [Fusing 2](https://www.youtube.com/watch?v=6M6wSLD-8M8)
+
+### [IMU vs AHRS vs INS (GNSS) vs RTK vs Compassing](https://www.youtube.com/watch?v=4CZQQ0VLCG8)
+
+### [Sensor vs Process Noise Example](https://youtu.be/4BoIE8YQwM8?t=362)
+
+### [Adafruit Compare Options](https://learn.adafruit.com/adafruit-sensorlab-gyroscope-calibration/comparing-gyroscopes)
 
 ### MPU6050 (InvenSense Legacy)
 - [Datasheet](https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf)
